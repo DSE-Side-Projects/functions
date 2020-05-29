@@ -1,12 +1,6 @@
 const sanityClient = require("@sanity/client")
 const fetchData = require("node-fetch")
 
-type responseArray = () => Promise<Array<Record<string, unknown>>>
-
-interface Document {
-
-}
-
 const client = sanityClient({
   projectId: process.env.SANITY_PROJECT_ID,
   dataset: "production",
@@ -31,11 +25,10 @@ const documentArray: responseArray = async () => {
 }
 
 exports.handler = async () => {
-  const responseBodyArray: Array<Record<string, any>> = []
-  const documents: Array<Record<string, any>> = await documentArray()
+  const responseBodyArray: Array<string> = []
+  const documents: Array<SanityDocument> = await documentArray()
   for (let i = 0; i < documents.length; i++) {
-    const doc: Record<string, any> = documents[i]
-    console.log(doc)
+    const doc: SanityDocument = documents[i]
     const SITE_URL: string = doc.url
 
     // const url = `https://api.microlink.io?url=${SITE_URL}&screenshot=true&meta=false&overlay.browser=light&overlay.background=linear-gradient(225deg%2C%20%23FF057C%200%25%2C%20%238D0B93%2050%25%2C%20%23321575%20100%25)&embed=screenshot.url&nonce=${
@@ -43,11 +36,11 @@ exports.handler = async () => {
     // }`
     const url = `https://api.apiflash.com/v1/urltoimage?access_key=7f3eb66149a5493abd0711522577c96b&format=jpeg&quality=85&response_type=image&transparent=true&url=${SITE_URL}&width=1080`
 
-    const fetchScreenshot = await fetchData(url)
+    const fetchScreenshot: Promise<Record<string, any>> = await fetchData(url)
     const data = await fetchScreenshot
     if (data.status !== 200) {
       const resetTimestamp = data.headers.get("x-rate-limit-reset")
-      const resetTime = new Date(resetTimestamp * 1000).toLocaleString()
+      const resetTime: string = new Date(resetTimestamp * 1000).toLocaleString()
       const errorMessage = {
         error: data.statusText,
         rateLimitResetTime: resetTime,
@@ -56,7 +49,7 @@ exports.handler = async () => {
     } else {
       responseBodyArray.push(doc._id)
       const screenshotImage = await data.arrayBuffer()
-      const buff = await Buffer.from(new Uint8Array(await screenshotImage))
+      const buff: Buffer = await Buffer.from(new Uint8Array(await screenshotImage))
       client.assets
         .upload("image", buff, {
           filename: `${doc._id}-screenshot.png`,
