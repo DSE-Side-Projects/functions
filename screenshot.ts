@@ -1,6 +1,12 @@
 const sanityClient = require("@sanity/client")
 const fetchData = require("node-fetch")
 
+type responseArray = () => Promise<Array<Record<string, unknown>>>
+
+interface Document {
+
+}
+
 const client = sanityClient({
   projectId: process.env.SANITY_PROJECT_ID,
   dataset: "production",
@@ -8,7 +14,7 @@ const client = sanityClient({
   useCdn: false,
 })
 
-const documentArray = async () => {
+const documentArray: responseArray = async () => {
   const docs = await fetchData(
     `https://${process.env.SANITY_PROJECT_ID}.api.sanity.io/v1/data/query/production?query=*[_type == "app"]`,
     {
@@ -25,11 +31,12 @@ const documentArray = async () => {
 }
 
 exports.handler = async () => {
-  const responseBodyArray: Array<Record<string, unknown>> = []
-  const documents = await documentArray()
+  const responseBodyArray: Array<Record<string, any>> = []
+  const documents: Array<Record<string, any>> = await documentArray()
   for (let i = 0; i < documents.length; i++) {
-    const doc = documents[i]
-    const SITE_URL = doc.url
+    const doc: Record<string, any> = documents[i]
+    console.log(doc)
+    const SITE_URL: string = doc.url
 
     // const url = `https://api.microlink.io?url=${SITE_URL}&screenshot=true&meta=false&overlay.browser=light&overlay.background=linear-gradient(225deg%2C%20%23FF057C%200%25%2C%20%238D0B93%2050%25%2C%20%23321575%20100%25)&embed=screenshot.url&nonce=${
     //   Math.random() * 320
