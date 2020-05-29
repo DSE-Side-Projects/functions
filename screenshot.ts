@@ -20,7 +20,7 @@ const documentArray: responseArray = async () => {
     }
   )
     .then((response: Body) => response.json())
-    .then((result: Record<string, any>) => result.result)
+    .then((result: Record<string, unknown>) => result.result)
   return docs
 }
 
@@ -30,11 +30,13 @@ exports.handler = async () => {
   for (let i = 0; i < documents.length; i++) {
     const doc: SanityDocument = documents[i]
     const SITE_URL: string = doc.url
-  
+
     const url = `https://api.apiflash.com/v1/urltoimage?access_key=7f3eb66149a5493abd0711522577c96b&format=jpeg&quality=85&response_type=image&transparent=true&url=${SITE_URL}&width=1080`
 
-    const fetchScreenshot: Promise<Record<string, any>> = await fetchData(url)
-    const data = await fetchScreenshot
+    const fetchScreenshot: Promise<Record<string, unknown>> = await fetchData(
+      url
+    )
+    const data: Record<string, any> = await fetchScreenshot
     if (data.status !== 200) {
       const resetTimestamp = data.headers.get("x-rate-limit-reset")
       const resetTime: string = new Date(resetTimestamp * 1000).toLocaleString()
@@ -46,12 +48,14 @@ exports.handler = async () => {
     } else {
       responseBodyArray.push(doc._id)
       const screenshotImage = await data.arrayBuffer()
-      const buff: Buffer = await Buffer.from(new Uint8Array(await screenshotImage))
+      const buff: Buffer = await Buffer.from(
+        new Uint8Array(await screenshotImage)
+      )
       client.assets
         .upload("image", buff, {
           filename: `${doc._id}-screenshot.png`,
         })
-        .then((imageAsset: any) => {
+        .then((imageAsset: ImageAsset) => {
           const mutations = [
             {
               patch: {
@@ -79,8 +83,8 @@ exports.handler = async () => {
               body: JSON.stringify({ mutations }),
             }
           )
-            .then((response: any) => response.json())
-            .then((result: any) => {
+            .then((response: Body) => response.json())
+            .then((result: string) => {
               responseBodyArray.push(result)
             })
         })
