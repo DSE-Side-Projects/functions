@@ -19,8 +19,8 @@ const documentArray: responseArray = async () => {
       },
     }
   )
-    .then((response) => response.json())
-    .then((result) => result.result)
+    .then((response: Body) => response.json())
+    .then((result: Record<string, any>) => result.result)
   return docs
 }
 
@@ -30,10 +30,7 @@ exports.handler = async () => {
   for (let i = 0; i < documents.length; i++) {
     const doc: SanityDocument = documents[i]
     const SITE_URL: string = doc.url
-
-    // const url = `https://api.microlink.io?url=${SITE_URL}&screenshot=true&meta=false&overlay.browser=light&overlay.background=linear-gradient(225deg%2C%20%23FF057C%200%25%2C%20%238D0B93%2050%25%2C%20%23321575%20100%25)&embed=screenshot.url&nonce=${
-    //   Math.random() * 320
-    // }`
+  
     const url = `https://api.apiflash.com/v1/urltoimage?access_key=7f3eb66149a5493abd0711522577c96b&format=jpeg&quality=85&response_type=image&transparent=true&url=${SITE_URL}&width=1080`
 
     const fetchScreenshot: Promise<Record<string, any>> = await fetchData(url)
@@ -54,7 +51,7 @@ exports.handler = async () => {
         .upload("image", buff, {
           filename: `${doc._id}-screenshot.png`,
         })
-        .then((imageAsset) => {
+        .then((imageAsset: any) => {
           const mutations = [
             {
               patch: {
@@ -82,13 +79,13 @@ exports.handler = async () => {
               body: JSON.stringify({ mutations }),
             }
           )
-            .then((response) => response.json())
-            .then((result) => {
+            .then((response: any) => response.json())
+            .then((result: any) => {
               responseBodyArray.push(result)
             })
         })
     }
   }
-  console.log(responseBodyArray)
+
   return { body: JSON.stringify(responseBodyArray), statusCode: "200" }
 }

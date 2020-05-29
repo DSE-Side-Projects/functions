@@ -14,16 +14,16 @@ interface Description {
 }
 
 interface Screenshot {
-  _type: string,
+  _type: string
   asset: Record<string, string>
 }
 
 interface Slug {
-  _type: string,
+  _type: string
   current: string
 }
 interface Technology {
-  _type: string,
+  _type: string
   _ref: string
 }
 interface SanityDocument {

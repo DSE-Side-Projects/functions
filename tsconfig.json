@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "esnext",
+    "jsx": "preserve",
+    "allowJs": true,
+    "checkJs": true,
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "removeComments": true,
+    "strictNullChecks": true,
+    "pretty":true,
+    "noImplicitReturns":true,
+    "noImplicitUseStrict":true,
+  },
+  "exclude": [
+    "node_modules",
+    "**/node_modules/*"
+  ]
+}

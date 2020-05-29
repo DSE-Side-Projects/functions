@@ -156,9 +156,7 @@ exports.handler = function () { return __awaiter(_this, void 0, void 0, function
             case 4:
                 i++;
                 return [3 /*break*/, 2];
-            case 5:
-                console.log(responseBodyArray);
-                return [2 /*return*/, { body: JSON.stringify(responseBodyArray), statusCode: "200" }];
+            case 5: return [2 /*return*/, { body: JSON.stringify(responseBodyArray), statusCode: "200" }];
         }
     });
 }); };
