@@ -33,12 +33,10 @@ exports.handler = async () => {
 
     const url = `https://api.apiflash.com/v1/urltoimage?access_key=7f3eb66149a5493abd0711522577c96b&format=jpeg&quality=85&response_type=image&transparent=true&url=${SITE_URL}&width=1080`
 
-    const fetchScreenshot: Promise<Record<string, unknown>> = await fetchData(
-      url
-    )
-    const data: Record<string, any> = await fetchScreenshot
+    const fetchScreenshot: Response = await fetchData(url)
+    const data: Response = await fetchScreenshot
     if (data.status !== 200) {
-      const resetTimestamp = data.headers.get("x-rate-limit-reset")
+      const resetTimestamp = Number(data.headers.get("x-rate-limit-reset"))
       const resetTime: string = new Date(resetTimestamp * 1000).toLocaleString()
       const errorMessage = {
         error: data.statusText,
