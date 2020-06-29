@@ -1,21 +1,23 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
+    "outDir": "./api",
+    "typeRoots": ["./node_modules/@types"],
     "module": "commonjs",
-    "target": "esnext",
-    "jsx": "preserve",
-    "allowJs": true,
-    "checkJs": true,
+    "moduleResolution": "node",
+    "target": "ES5",
+    "lib": ["dom", "esnext"],
+    "strict": true,
+    "noEmit": false,
     "sourceMap": true,
-    "noImplicitAny": true,
-    "removeComments": true,
-    "strictNullChecks": true,
-    "pretty":true,
-    "noImplicitReturns":true,
-    "noImplicitUseStrict":true,
+    "isolatedModules": false,
+    "esModuleInterop": false,
+    "noUnusedLocals": true,
+    "allowJs": true,
+    "resolveJsonModule": false,
+    "checkJs": true,
+    "allowSyntheticDefaultImports": true
   },
-  "exclude": [
-    "node_modules",
-    "**/node_modules/*"
-  ]
+  "include": ["ts/*.ts"],
+  "exclude": ["node_modules", "public", "api"]
 }

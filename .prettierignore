@@ -3,3 +3,5 @@ package.json
 package-lock.json
 yarn.json
 yarn-error.json
+node_modules/
+.netlify

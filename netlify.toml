@@ -11,10 +11,10 @@
   publish = "/"
 
   # Default build command.
-  command = "tsc *.ts"
+  command = "tsc ts/*.ts"
 
   # Directory with the serverless Lambda functions to deploy to AWS.
-  functions = "/"
+  functions = "/api"
 
 # A basic redirect rule
 [[redirects]]
