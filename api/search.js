@@ -103,7 +103,7 @@ exports.handler = function (event, callback) { return __awaiter(void 0, void 0, 
                         switch (_a.label) {
                             case 0: return [4 /*yield*/, appsArray()
                                     .then(function (docs) {
-                                    return docs.find(function (app) { return app.appId === appId && app.url === siteUrl; });
+                                    return docs.find(function (app) { return app._id === appId && app.url === siteUrl; });
                                 })];
                             case 1:
                                 app = _a.sent();

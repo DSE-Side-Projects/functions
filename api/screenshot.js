@@ -36,17 +36,17 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// import sanityClient from "@sanity/client"
+var sanityClient = require("@sanity/client");
 var node_fetch_1 = require("node-fetch");
 var crypto = require("crypto");
-// const client = sanityClient({ 
-//   projectId: process.env.SANITY_PROJECT_ID,
-//   dataset: "production",
-//   token: process.env.SANITY_API_TOKEN,
-//   useCdn: false
-// })
+var client = sanityClient({
+    projectId: process.env.SANITY_PROJECT_ID,
+    dataset: "production",
+    token: process.env.SANITY_API_TOKEN,
+    useCdn: false
+});
 exports.handler = function (event) { return __awaiter(void 0, void 0, void 0, function () {
-    var nonceCheck, body, url, fetchScreenshot, resetTimestamp, resetTime, errorMessage, app;
+    var nonceCheck, body, timestamp, nonce, appId, siteUrl, validBody, url, fetchScreenshot, resetTimestamp, resetTime, errorMessage, datetime, screenshotImage, buff, upload;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -56,22 +56,27 @@ exports.handler = function (event) { return __awaiter(void 0, void 0, void 0, fu
                     return nonceValue.digest("hex") === nonce;
                 };
                 body = JSON.parse(event.body);
-                if (!body || !body.appId || !body.siteUrl || !body.timestamp || !body.nonce) {
+                timestamp = body.timestamp, nonce = body.nonce, appId = body.appId, siteUrl = body.siteUrl;
+                validBody = function (body) {
+                    if (!body || !appId || !siteUrl || !timestamp || !nonce) {
+                        console.error({ "response": "Invalid request body", "requestBody": body });
+                        return false;
+                    }
+                    if (nonceCheck(timestamp, nonce) === false) {
+                        console.log({ "verified": nonceCheck(timestamp, nonce), "error": "401", "response": "You sneaky bastard! 😡" });
+                        return false;
+                    }
+                    // Rudimentary logging to serverless function console
+                    // TODO: replace with proper logging eventually
+                    console.info("Nonce ✅", "\nBody Valid ✅", "\nAll params valid ✅", "\nTaking screenshot...");
+                    return true;
+                };
+                if (!validBody(body)) {
                     return [2 /*return*/, {
-                            statusCode: 400,
-                            body: JSON.stringify({ "response": "Invalid request body", "requestBody": body })
+                            body: JSON.stringify({ "status": "❌", "response": "Validation failed" }),
+                            statusCode: 400
                         }];
                 }
-                if (nonceCheck(body.timestamp, body.nonce) === false) {
-                    console.log({ "verified": nonceCheck(body.timestamp, body.nonce), "error": "401", "response": "You sneaky bastard! 😡" });
-                    return [2 /*return*/, {
-                            statusCode: 401,
-                            body: JSON.stringify({ "error": "401", "response": "You sneaky bastard! 😡", "valid": nonceCheck(body.timestamp, body.nonce) })
-                        }];
-                }
-                // Rudimentary logging to serverless function console
-                // TODO: replace with proper logging eventually
-                console.info("Nonce ✅", "\nTaking screenshot");
                 url = "https://api.microlink.io?url=" + body.siteUrl + "&overlay.browser=dark&overlay.background=%23edf2f7&screenshot=true&meta=false&embed=screenshot.url&viewport.height=800";
                 return [4 /*yield*/, node_fetch_1.default(url)];
             case 1:
@@ -83,19 +88,61 @@ exports.handler = function (event) { return __awaiter(void 0, void 0, void 0, fu
                         error: fetchScreenshot.statusText,
                         rateLimitResetTime: resetTime,
                     };
+                    console.error("❌ Screenshot not taken", "\nRate Limit exceeded or something: " + fetchScreenshot.statusText);
                     return [2 /*return*/, { body: JSON.stringify(errorMessage), statusCode: "500" }];
                 }
-                console.info(fetchScreenshot.statusText);
-                return [2 /*return*/, {
-                        body: JSON.stringify({ "response": fetchScreenshot.statusText }),
-                        statusCode: 200
-                    }];
+                else {
+                    console.info("✅ Screenshot taken", "\nUploading to Sanity");
+                }
+                datetime = new Date();
+                return [4 /*yield*/, fetchScreenshot.arrayBuffer()];
             case 2:
-                app = _a.sent();
-                console.log(app);
+                screenshotImage = _a.sent();
+                buff = Buffer.from(new Uint8Array(screenshotImage));
+                return [4 /*yield*/, client.assets
+                        .upload("image", buff, {
+                        filename: body.appId + "-screenshot.png",
+                    })
+                        .then(function (imageAsset) {
+                        var mutations = [{
+                                patch: {
+                                    id: body.appId,
+                                    set: {
+                                        screenshot: {
+                                            image: {
+                                                _type: "image",
+                                                asset: {
+                                                    _type: "reference",
+                                                    _ref: imageAsset._id,
+                                                },
+                                            },
+                                            screenshotMetadata: {
+                                                timestamp: datetime.toISOString(),
+                                                source: "function"
+                                            }
+                                        },
+                                    },
+                                },
+                            }];
+                        return node_fetch_1.default("https://" + process.env.SANITY_PROJECT_ID + ".api.sanity.io/v1/data/mutate/production", {
+                            method: "post",
+                            headers: {
+                                "Content-type": "application/json",
+                                Authorization: "Bearer " + process.env.SANITY_API_TOKEN,
+                            },
+                            body: JSON.stringify({ mutations: mutations }),
+                        })
+                            .then(function (response) { return response.json(); })
+                            .then(function (result) {
+                            return result;
+                        });
+                    })];
+            case 3:
+                upload = _a.sent();
+                console.log({ "status": "✅", "response": upload, "metadata": { "timestamp": Date.now() } });
                 return [2 /*return*/, {
-                        statusCode: 200,
-                        body: JSON.stringify(nonceCheck(body.timestamp, body.nonce))
+                        body: JSON.stringify({ "status": "✅", "response": upload, "metadata": { "timestamp": Date.now() } }),
+                        statusCode: 200
                     }];
         }
     });

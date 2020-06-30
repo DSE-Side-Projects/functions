@@ -67,7 +67,7 @@ exports.handler = async (event: NetlifyResponse, callback: any) => {
   const findApp = async (appId: string, siteUrl?: string ) => {
     const app = await appsArray()
     .then(docs => {
-        return docs.find(app => app.appId === appId && app.url === siteUrl)
+        return docs.find(app => app._id === appId && app.url === siteUrl)
       })
     return app;
   }
