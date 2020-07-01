@@ -5,7 +5,7 @@
 import fetchData from "node-fetch";
 const crypto = require("crypto")
 
-const SCREENSHOT_FUNCTION = "http://localhost:8888/.netlify/functions/screenshot";
+const SCREENSHOT_FUNCTION = "https://dse-functions.netlify.app/.netlify/functions/screenshot"
 
 const generateNonce = () => {
   const timestamp = Date.now().toString();
@@ -30,7 +30,7 @@ const appsArray = async () => {
   return app
 }
 
-exports.handler = async (event: NetlifyResponse, callback: any) => {
+exports.handler = async (event: NetlifyResponse) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
@@ -51,42 +51,57 @@ exports.handler = async (event: NetlifyResponse, callback: any) => {
     };
   }
 
-  const body: Record<string, string> = JSON.parse(event.body);
+  const body: Required<GithubPayload> = JSON.parse(event.body);
 
-  if(!body.appId || !body.siteUrl || Object.keys(body).length > 2){
+  if(!body.repository){
     return {
       statusCode: 400,
-      body: "Invalid Request. appId & siteUrl are required. Only these two params are allowed."
+      body: "Invalid Request"
     };
   }
 
-  const { siteUrl, appId } = body
+  const githubHookSecret = event.headers["x-hub-signature"]
+  const githubHookSecretHash = crypto.createHmac("sha1", process.env.GITHUB_HOOK_SECRET)
+  const githubHookHashedSecret = githubHookSecretHash.update(event.body)
+  const githubHookSecretResult = githubHookHashedSecret.digest('hex')
+  console.log(githubHookSecret, `\nsha1=${githubHookSecretResult}`)
+
+  if(githubHookSecret !== `sha1=${githubHookSecretResult}`){
+    return {
+      statusCode: 401,
+      body: "Unauthorized"
+    };
+  }
+
+  const { homepage } = body.repository
 
   // find app 
 
-  const findApp = async (appId: string, siteUrl?: string ) => {
+  const findApp = async (siteUrl: string) => {
     const app = await appsArray()
     .then(docs => {
-        return docs.find(app => app._id === appId && app.url === siteUrl)
+        return docs.find(app => app.url === siteUrl)
       })
     return app;
   }
 
-  const app = await findApp(appId, siteUrl)
+  const app = await findApp(homepage)
 
   if(app === undefined) {
     return { statusCode: 404, body: "App Not Found 🤷🏽‍♀️"}
   }
   
   // send these to screenshot function
-  fetchData(SCREENSHOT_FUNCTION, { method: 'POST', headers: { "Accept": "application/json", "X-Nonce": "app" }, body: JSON.stringify({"appId": app!._id, "siteUrl" : app!.url, "timestamp": generateNonce().timestamp, "nonce":generateNonce().nonce }) })
+  const debug = await fetchData(SCREENSHOT_FUNCTION, { method: 'POST', headers: { "Accept": "application/json", "X-Nonce": "app" }, body: JSON.stringify({"appId": app!._id, "siteUrl" : app!.url, "timestamp": generateNonce().timestamp, "nonce":generateNonce().nonce }) })
     .then(response => response.json())
     .then(data => ({
       statusCode: 200,
       body: data
     }))
 
+    console.log(JSON.stringify({"appId": app!._id, "siteUrl" : app!.url, "timestamp": generateNonce().timestamp, "nonce":generateNonce().nonce}))
+
   return {statusCode: 200,
-    body: JSON.stringify({"success": "Going to take a screenshot now!"})
+    body: JSON.stringify({"success": "Going to take a screenshot now!", "passed along": JSON.stringify({"appId": app!._id, "siteUrl" : app!.url, "timestamp": generateNonce().timestamp, "nonce":generateNonce().nonce })})
     }
 }

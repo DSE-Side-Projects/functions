@@ -10,21 +10,39 @@ const client = sanityClient({
 })
 
 exports.handler = async (event: NetlifyResponse) => {
-  // Checking if request is legit
+  const isJsonString: ValidateJson = (str: string) => {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+
+  /** 
+   * Checking if the request that comes from the previous function is legit
+  */ 
+  
+  // TODO: Change this rudimentary check to actual validation
   const nonceCheck = (timestamp: string, nonce: string) => {
     const hash = crypto.createHash("sha256")
     const nonceValue = hash.update(timestamp)
     return nonceValue.digest("hex") === nonce
   }
 
-  const body: Record<string, string> = JSON.parse(event.body);
-
-  const {timestamp, nonce, appId, siteUrl } = body
-
   const validBody = (body: Record<string, string>) => {
-    if(!body || !appId || !siteUrl || !timestamp || !nonce ) {
+    if(!body || !isJsonString(event.body) ) {
       console.error({"response": "Invalid request body", "requestBody": body})
       return false;
+    }
+
+    const bodyValidation: Record<string, string> = JSON.parse(event.body);
+
+    const { timestamp, nonce, appId, siteUrl } = bodyValidation
+
+    if(!appId || !siteUrl || !timestamp || !nonce){
+      console.error({"response": "Invalid request body", "requestBody": body})
+      return false
     }
 
     if(nonceCheck(timestamp, nonce) === false){
@@ -37,6 +55,11 @@ exports.handler = async (event: NetlifyResponse) => {
     console.info("Nonce ✅", "\nBody Valid ✅", "\nAll params valid ✅", "\nTaking screenshot...")
     return true
   }
+
+  const body: Record<string, string> = JSON.parse(event.body);
+
+  const { appId, siteUrl } = body
+
   if(!validBody(body)){
     return {
       body: JSON.stringify({"status": "❌", "response": "Validation failed"}),
@@ -44,7 +67,7 @@ exports.handler = async (event: NetlifyResponse) => {
     }
   }
 
-  const url=`https://api.microlink.io?url=${body.siteUrl}&overlay.browser=dark&overlay.background=%23edf2f7&screenshot=true&meta=false&embed=screenshot.url&viewport.height=800`
+  const url=`https://api.microlink.io?url=${siteUrl}&overlay.browser=dark&overlay.background=%23edf2f7&screenshot=true&meta=false&embed=screenshot.url&viewport.height=800`
 
   const fetchScreenshot = await fetchData(url)
 
@@ -69,12 +92,12 @@ exports.handler = async (event: NetlifyResponse) => {
 
   const upload = await client.assets
     .upload("image", buff, {
-      filename: `${body.appId}-screenshot.png`,
+      filename: `${appId}-screenshot.png`,
     })
     .then((imageAsset) => {
       const mutations = [{
         patch: {
-          id: body.appId,
+          id: appId,
           set: {
             screenshot: {
               image: {

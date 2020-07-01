@@ -1,5 +1,11 @@
 type responseArray = () => Promise<Array<SanityDocument>>
 
+interface GithubPayload {
+    "repository": {
+      "homepage": string
+    }
+}
+
 interface Deploy {
   _ref: string
   _type: string

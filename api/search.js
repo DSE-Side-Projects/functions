@@ -40,7 +40,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Triggered by a Github webhook
 var node_fetch_1 = require("node-fetch");
 var crypto = require("crypto");
-var SCREENSHOT_FUNCTION = "http://localhost:8888/.netlify/functions/screenshot";
+var SCREENSHOT_FUNCTION = "https://dse-functions.netlify.app/.netlify/functions/screenshot";
 var generateNonce = function () {
     var timestamp = Date.now().toString();
     var hash = crypto.createHash("sha256");
@@ -66,8 +66,8 @@ var appsArray = function () { return __awaiter(void 0, void 0, void 0, function 
         }
     });
 }); };
-exports.handler = function (event, callback) { return __awaiter(void 0, void 0, void 0, function () {
-    var isJsonString, body, siteUrl, appId, findApp, app;
+exports.handler = function (event) { return __awaiter(void 0, void 0, void 0, function () {
+    var isJsonString, body, githubHookSecret, githubHookSecretHash, githubHookHashedSecret, githubHookSecretResult, homepage, findApp, app, debug;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -90,20 +90,31 @@ exports.handler = function (event, callback) { return __awaiter(void 0, void 0, 
                         }];
                 }
                 body = JSON.parse(event.body);
-                if (!body.appId || !body.siteUrl || Object.keys(body).length > 2) {
+                if (!body.repository) {
                     return [2 /*return*/, {
                             statusCode: 400,
-                            body: "Invalid Request. appId & siteUrl are required. Only these two params are allowed."
+                            body: "Invalid Request"
                         }];
                 }
-                siteUrl = body.siteUrl, appId = body.appId;
-                findApp = function (appId, siteUrl) { return __awaiter(void 0, void 0, void 0, function () {
+                githubHookSecret = event.headers["x-hub-signature"];
+                githubHookSecretHash = crypto.createHmac("sha1", process.env.GITHUB_HOOK_SECRET);
+                githubHookHashedSecret = githubHookSecretHash.update(event.body);
+                githubHookSecretResult = githubHookHashedSecret.digest('hex');
+                console.log(githubHookSecret, "\nsha1=" + githubHookSecretResult);
+                if (githubHookSecret !== "sha1=" + githubHookSecretResult) {
+                    return [2 /*return*/, {
+                            statusCode: 401,
+                            body: "Unauthorized"
+                        }];
+                }
+                homepage = body.repository.homepage;
+                findApp = function (siteUrl) { return __awaiter(void 0, void 0, void 0, function () {
                     var app;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0: return [4 /*yield*/, appsArray()
                                     .then(function (docs) {
-                                    return docs.find(function (app) { return app._id === appId && app.url === siteUrl; });
+                                    return docs.find(function (app) { return app.url === siteUrl; });
                                 })];
                             case 1:
                                 app = _a.sent();
@@ -111,21 +122,22 @@ exports.handler = function (event, callback) { return __awaiter(void 0, void 0, 
                         }
                     });
                 }); };
-                return [4 /*yield*/, findApp(appId, siteUrl)];
+                return [4 /*yield*/, findApp(homepage)];
             case 1:
                 app = _a.sent();
                 if (app === undefined) {
                     return [2 /*return*/, { statusCode: 404, body: "App Not Found 🤷🏽‍♀️" }];
                 }
-                // send these to screenshot function
-                node_fetch_1.default(SCREENSHOT_FUNCTION, { method: 'POST', headers: { "Accept": "application/json", "X-Nonce": "app" }, body: JSON.stringify({ "appId": app._id, "siteUrl": app.url, "timestamp": generateNonce().timestamp, "nonce": generateNonce().nonce }) })
-                    .then(function (response) { return response.json(); })
-                    .then(function (data) { return ({
-                    statusCode: 200,
-                    body: data
-                }); });
-                return [2 /*return*/, { statusCode: 200,
-                        body: JSON.stringify({ "success": "Going to take a screenshot now!" })
+                return [4 /*yield*/, node_fetch_1.default(SCREENSHOT_FUNCTION, { method: 'POST', headers: { "Accept": "application/json", "X-Nonce": "app" }, body: JSON.stringify({ "appId": app._id, "siteUrl": app.url, "timestamp": generateNonce().timestamp, "nonce": generateNonce().nonce }) })
+                        .then(function (response) { return response.json(); })
+                        .then(function (data) { return ({
+                        statusCode: 200,
+                        body: data
+                    }); })];
+            case 2:
+                debug = _a.sent();
+                console.log(JSON.stringify({ "appId": app._id, "siteUrl": app.url, "timestamp": generateNonce().timestamp, "nonce": generateNonce().nonce }));
+                return [2 /*return*/, { statusCode: 200, body: JSON.stringify({ "success": "Going to take a screenshot now!", "passed along": JSON.stringify({ "appId": app._id, "siteUrl": app.url, "timestamp": generateNonce().timestamp, "nonce": generateNonce().nonce }) })
                     }];
         }
     });

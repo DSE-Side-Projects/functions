@@ -46,19 +46,32 @@ var client = sanityClient({
     useCdn: false
 });
 exports.handler = function (event) { return __awaiter(void 0, void 0, void 0, function () {
-    var nonceCheck, body, timestamp, nonce, appId, siteUrl, validBody, url, fetchScreenshot, resetTimestamp, resetTime, errorMessage, datetime, screenshotImage, buff, upload;
+    var isJsonString, nonceCheck, validBody, body, appId, siteUrl, url, fetchScreenshot, resetTimestamp, resetTime, errorMessage, datetime, screenshotImage, buff, upload;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
+                isJsonString = function (str) {
+                    try {
+                        JSON.parse(str);
+                    }
+                    catch (e) {
+                        return false;
+                    }
+                    return true;
+                };
                 nonceCheck = function (timestamp, nonce) {
                     var hash = crypto.createHash("sha256");
                     var nonceValue = hash.update(timestamp);
                     return nonceValue.digest("hex") === nonce;
                 };
-                body = JSON.parse(event.body);
-                timestamp = body.timestamp, nonce = body.nonce, appId = body.appId, siteUrl = body.siteUrl;
                 validBody = function (body) {
-                    if (!body || !appId || !siteUrl || !timestamp || !nonce) {
+                    if (!body || !isJsonString(event.body)) {
+                        console.error({ "response": "Invalid request body", "requestBody": body });
+                        return false;
+                    }
+                    var bodyValidation = JSON.parse(event.body);
+                    var timestamp = bodyValidation.timestamp, nonce = bodyValidation.nonce, appId = bodyValidation.appId, siteUrl = bodyValidation.siteUrl;
+                    if (!appId || !siteUrl || !timestamp || !nonce) {
                         console.error({ "response": "Invalid request body", "requestBody": body });
                         return false;
                     }
@@ -71,13 +84,15 @@ exports.handler = function (event) { return __awaiter(void 0, void 0, void 0, fu
                     console.info("Nonce ✅", "\nBody Valid ✅", "\nAll params valid ✅", "\nTaking screenshot...");
                     return true;
                 };
+                body = JSON.parse(event.body);
+                appId = body.appId, siteUrl = body.siteUrl;
                 if (!validBody(body)) {
                     return [2 /*return*/, {
                             body: JSON.stringify({ "status": "❌", "response": "Validation failed" }),
                             statusCode: 400
                         }];
                 }
-                url = "https://api.microlink.io?url=" + body.siteUrl + "&overlay.browser=dark&overlay.background=%23edf2f7&screenshot=true&meta=false&embed=screenshot.url&viewport.height=800";
+                url = "https://api.microlink.io?url=" + siteUrl + "&overlay.browser=dark&overlay.background=%23edf2f7&screenshot=true&meta=false&embed=screenshot.url&viewport.height=800";
                 return [4 /*yield*/, node_fetch_1.default(url)];
             case 1:
                 fetchScreenshot = _a.sent();
@@ -101,12 +116,12 @@ exports.handler = function (event) { return __awaiter(void 0, void 0, void 0, fu
                 buff = Buffer.from(new Uint8Array(screenshotImage));
                 return [4 /*yield*/, client.assets
                         .upload("image", buff, {
-                        filename: body.appId + "-screenshot.png",
+                        filename: appId + "-screenshot.png",
                     })
                         .then(function (imageAsset) {
                         var mutations = [{
                                 patch: {
-                                    id: body.appId,
+                                    id: appId,
                                     set: {
                                         screenshot: {
                                             image: {
