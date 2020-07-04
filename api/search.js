@@ -136,7 +136,7 @@ exports.handler = function (event) { return __awaiter(void 0, void 0, void 0, fu
                     }); })];
             case 2:
                 debug = _a.sent();
-                console.log(JSON.stringify({ "appId": app._id, "siteUrl": app.url, "timestamp": generateNonce().timestamp, "nonce": generateNonce().nonce }));
+                console.log(debug);
                 return [2 /*return*/, { statusCode: 200, body: JSON.stringify({ "success": "Going to take a screenshot now!", "passed along": JSON.stringify({ "appId": app._id, "siteUrl": app.url, "timestamp": generateNonce().timestamp, "nonce": generateNonce().nonce }) })
                     }];
         }

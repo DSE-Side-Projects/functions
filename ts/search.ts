@@ -99,7 +99,7 @@ exports.handler = async (event: NetlifyResponse) => {
       body: data
     }))
 
-    console.log(JSON.stringify({"appId": app!._id, "siteUrl" : app!.url, "timestamp": generateNonce().timestamp, "nonce":generateNonce().nonce}))
+    console.log(debug)
 
   return {statusCode: 200,
     body: JSON.stringify({"success": "Going to take a screenshot now!", "passed along": JSON.stringify({"appId": app!._id, "siteUrl" : app!.url, "timestamp": generateNonce().timestamp, "nonce":generateNonce().nonce })})
