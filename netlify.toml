@@ -11,53 +11,14 @@
   publish = "/"
 
   # Default build command.
-  command = "tsc *.ts"
+  command = "tsc ts/*.ts"
 
   # Directory with the serverless Lambda functions to deploy to AWS.
-  functions = "/"
+  functions = "/api"
 
-# A basic redirect rule
-[[redirects]]
-  from = "/.netlify/functions*"
-  to = "/api/:splat"
-
-  # The default HTTP status code is 301, but you can define a different one.
-  status = 302
-
-  # By default, redirects won't be applied if there's a file with the same
-  # path as the one defined in the `from` property. Setting `force` to `true`
-  # will make the redirect rule take precedence over any existing files.
-  force = true
-
-  # # Redirect from /old-path?id=123 to /new-path. Each combination of query
-  # # params needs to be defined in a separate [[redirects]] block.
-  # # More information at https://docs.netlify.com/routing/redirects/redirect-options/#query-parameters
-  # query = {id = ":id"}
-
-  # # Redirect based on browser language, geolocation, and/or identity role.
-  # conditions = {Language = ["en"], Country = ["US"]}
-
-  # Sign each request with a value defined in an environment variable
-  # signed = "API_SIGNATURE_TOKEN"
-
-  # You can also define custom headers within your redirects blocks.
-  # [redirects.headers]
-  #   X-From = "Netlify"
-  #   X-Api-Key = "some-api-key-string"
-
-# Role-based redirects does not have a 'to' property.
-# [[redirects]]
-#   from = "/gated-path"
-#   status = 200
-#   conditions = {Role = ["admin"]}
-#   force = true
-
-# The following redirect is intended for use with most SPAs that handle
-# routing internally.
-# [[redirects]]
-#   from = "/*"
-#   to = "/index.html"
-#   status = 200
+[context.production]
+  [context.production.environment]
+    NODE_ENV = "production"
 
 [[headers]]
   # Define which paths this specific [[headers]] block will cover.

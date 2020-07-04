@@ -1,5 +1,11 @@
 type responseArray = () => Promise<Array<SanityDocument>>
 
+interface GithubPayload {
+    "repository": {
+      "homepage": string
+    }
+}
+
 interface Deploy {
   _ref: string
   _type: string
@@ -32,6 +38,7 @@ interface SanityDocument {
   _rev: string
   _type: string
   _updatedAt: string
+  appId: string
   deploy: Deploy
   description: Description
   docs: string
@@ -81,3 +88,41 @@ interface ImageAsset {
   size: number
   mimeType: string
 }
+
+/**
+  * Response from a Netlify serverless function.
+*/
+interface NetlifyResponse {
+    path: string
+    httpMethod: string // Incoming request's method name
+    headers: Record<string, string> // {Incoming request headers}
+    queryStringParameters: Record<string, unknown> // query string parameters
+    body: string // A JSON string of the request payload.
+    isBase64Encoded: boolean // A boolean flag to indicate if the applicable request payload is Base64-encoded
+}
+
+/**
+ * Upon serverless function execution, Netlify returns NetlifyResponse along with the execution context.
+*/
+interface NetlifyContext  {
+    done: any
+    fail: any
+    succeed: any
+    getRemainingTimeInMillis: any
+    callbackWaitsForEmptyEventLoop: boolean
+    functionName: string
+    functionVersion: string
+    invokedFunctionArn: string
+    memoryLimitInMB: number
+    awsRequestId: string
+    logGroupName: string
+    logStreamName: string
+    identity: string,
+    clientContext: Record<string, unknown>,
+    _stopped: boolean
+}
+
+  /**
+  * Returns `true` or `false` depending on if a string is or isn't valid JSON
+  */
+type ValidateJson = (str: string) => boolean
